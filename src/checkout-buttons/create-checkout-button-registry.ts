@@ -5,10 +5,13 @@ import { getScriptLoader } from '@bigcommerce/script-loader';
 import { CheckoutActionCreator, CheckoutRequestSender, CheckoutStore } from '../checkout';
 import { Registry } from '../common/registry';
 import { ConfigActionCreator, ConfigRequestSender } from '../config';
+import PaymentMethodActionCreator from '../payment/payment-method-action-creator';
+import PaymentMethodRequestSender from '../payment/payment-method-request-sender';
 import { BraintreeScriptLoader, BraintreeSDKCreator } from '../payment/strategies/braintree';
+import { MasterpassScriptLoader } from '../payment/strategies/masterpass';
 import { PaypalScriptLoader } from '../payment/strategies/paypal';
 
-import { BraintreePaypalButtonStrategy, CheckoutButtonStrategy } from './strategies';
+import { BraintreePaypalButtonStrategy, CheckoutButtonStrategy, MasterpassButtonStrategy } from './strategies';
 
 export default function createCheckoutButtonRegistry(
     store: CheckoutStore,
@@ -20,6 +23,7 @@ export default function createCheckoutButtonRegistry(
         new CheckoutRequestSender(requestSender),
         new ConfigActionCreator(new ConfigRequestSender(requestSender))
     );
+    const paymentMethodActionCreator = new PaymentMethodActionCreator(new PaymentMethodRequestSender(requestSender));
 
     registry.register('braintreepaypal', () =>
         new BraintreePaypalButtonStrategy(
@@ -39,6 +43,15 @@ export default function createCheckoutButtonRegistry(
             new PaypalScriptLoader(scriptLoader),
             createFormPoster(),
             true
+        )
+    );
+
+    registry.register('masterpass', () =>
+        new MasterpassButtonStrategy(
+            store,
+            checkoutActionCreator,
+            paymentMethodActionCreator,
+            new MasterpassScriptLoader(scriptLoader)
         )
     );
 
