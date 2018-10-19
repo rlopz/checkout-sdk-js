@@ -47,7 +47,7 @@ export interface MasterpassCheckoutOptions {
      */
     callbackUrl?: string;
     /**
-     * This optional can be used to use the shipping adress from the BC Store.
+     * Set to "true" if you don't require shipping address for checkout; default is false
      */
     suppressShippingAddress?: boolean;
 }
