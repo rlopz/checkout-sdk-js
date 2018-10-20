@@ -1,9 +1,9 @@
 import { createRequestSender, RequestSender } from '@bigcommerce/request-sender';
 import { createScriptLoader } from '@bigcommerce/script-loader';
 
+import { CheckoutButtonInitializeOptions } from '../';
 import { getCartState } from '../../cart/carts.mock';
-import { createCheckoutStore, CheckoutActionCreator, CheckoutRequestSender, CheckoutStore } from '../../checkout';
-import Checkout from '../../checkout/checkout';
+import { createCheckoutStore, Checkout, CheckoutActionCreator, CheckoutRequestSender, CheckoutStore } from '../../checkout';
 import { getCheckout, getCheckoutState } from '../../checkout/checkouts.mock';
 import { InvalidArgumentError, MissingDataError } from '../../common/error/errors';
 import { ConfigActionCreator, ConfigRequestSender } from '../../config';
@@ -11,10 +11,8 @@ import { PaymentMethod, PaymentMethodActionCreator, PaymentMethodRequestSender }
 import { getMasterpass, getPaymentMethodsState } from '../../payment/payment-methods.mock';
 import { Masterpass, MasterpassScriptLoader } from '../../payment/strategies/masterpass';
 import { getMasterpassScriptMock } from '../../payment/strategies/masterpass/masterpass.mock';
-import { CheckoutButtonInitializeOptions } from '../checkout-button-options';
 
-import {  MasterpassButtonStrategy } from './';
-import CheckoutButtonStrategy from './checkout-button-strategy';
+import { CheckoutButtonStrategy, MasterpassButtonStrategy } from './';
 
 describe('MasterpassCustomerStrategy', () => {
     let container: HTMLDivElement;
