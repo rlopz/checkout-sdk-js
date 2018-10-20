@@ -5,6 +5,7 @@ import {
     MissingDataError,
     MissingDataErrorType
 } from '../../common/error/errors';
+import { bindDecorator as bind } from '../../common/utility';
 import { PaymentMethod, PaymentMethodActionCreator } from '../../payment';
 import {
     Masterpass,
@@ -110,6 +111,7 @@ export default class MasterpassButtonStrategy extends CheckoutButtonStrategy {
         };
     }
 
+    @bind
     private _handleWalletButtonClick(): void  {
         const payload = this._createMasterpassPayload();
         this.masterpassClient.checkout(payload);
