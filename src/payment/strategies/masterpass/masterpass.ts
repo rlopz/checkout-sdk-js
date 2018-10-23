@@ -46,6 +46,7 @@ export interface MasterpassCheckoutOptions {
      * This optional parameter can be used to override the callbackUrl specified in the Merchant Portal.
      */
     callbackUrl?: string;
+
     /**
      * Set to "true" if you don't require shipping address for checkout; default is false
      */
