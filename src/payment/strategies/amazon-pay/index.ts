@@ -1,3 +1,4 @@
+export { default as AmazonPayConfirmationFlow } from './amazon-pay-confirmation-flow';
 export { default as AmazonPayPaymentStrategy } from './amazon-pay-payment-strategy';
 export { default as AmazonPayPaymentInitializeOptions } from './amazon-pay-payment-initialize-options';
 export { default as AmazonPayScriptLoader } from './amazon-pay-script-loader';
