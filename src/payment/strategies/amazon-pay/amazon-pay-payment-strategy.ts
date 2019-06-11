@@ -89,13 +89,10 @@ export default class AmazonPayPaymentStrategy implements PaymentStrategy {
                 referenceId,
                 ( confirmationFlow: any ) => {
                     return this._store.dispatch(
-                        this._remoteCheckoutActionCreator.initializePayment(paymentPayload.methodId, { referenceId, useStoreCredit })
+                        this._orderActionCreator.submitOrder({ useStoreCredit }, options)
                     )
                         .then(() => this._store.dispatch(
-                            this._orderActionCreator.submitOrder({
-                                ...payload,
-                                payment: paymentPayload,
-                            }, options)
+                            this._remoteCheckoutActionCreator.initializePayment(paymentPayload.methodId, { referenceId, useStoreCredit })
                         ))
                         .then( confirmationFlow.success() )
                         .catch(error => {
