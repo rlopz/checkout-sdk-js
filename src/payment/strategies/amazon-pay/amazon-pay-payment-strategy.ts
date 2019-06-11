@@ -12,6 +12,7 @@ import PaymentMethod from '../../payment-method';
 import { PaymentInitializeOptions, PaymentRequestOptions } from '../../payment-request-options';
 import PaymentStrategy from '../payment-strategy';
 
+import AmazonPayConfirmationFlow from './amazon-pay-confirmation-flow';
 import AmazonPayOrderReference from './amazon-pay-order-reference';
 import AmazonPayPaymentInitializeOptions from './amazon-pay-payment-initialize-options';
 import AmazonPayScriptLoader from './amazon-pay-script-loader';
@@ -87,19 +88,16 @@ export default class AmazonPayPaymentStrategy implements PaymentStrategy {
             this._window.OffAmazonPayments.initConfirmationFlow(
                 sellerId,
                 referenceId,
-                ( confirmationFlow: any ) => {
+                ( confirmationFlow: AmazonPayConfirmationFlow ) => {
                     return this._store.dispatch(
                         this._orderActionCreator.submitOrder({ useStoreCredit }, options)
                     )
                         .then(() => this._store.dispatch(
                             this._remoteCheckoutActionCreator.initializePayment(paymentPayload.methodId, { referenceId, useStoreCredit })
                         ))
-                        .then( confirmationFlow.success() )
+                        .then( () => confirmationFlow.success() )
                         .catch(error => {
-                            if (error instanceof RequestError && error.body.type === 'provider_widget_error' && this._walletOptions) {
-                                return this._createWallet(this._walletOptions)
-                                    .then(() => Promise.reject(error));
-                            }
+                            confirmationFlow.failure();
 
                             return Promise.reject(error);
                         });
@@ -107,7 +105,7 @@ export default class AmazonPayPaymentStrategy implements PaymentStrategy {
             );
         }
 
-        return Promise.reject();
+        return new Promise<never>( () => {} );
     }
 
     finalize(options?: PaymentRequestOptions): Promise<InternalCheckoutSelectors> {
