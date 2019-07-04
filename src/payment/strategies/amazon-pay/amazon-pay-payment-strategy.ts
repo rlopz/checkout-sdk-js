@@ -29,6 +29,7 @@ import AmazonPayPaymentInitializeOptions from './amazon-pay-payment-initialize-o
 import AmazonPayScriptLoader from './amazon-pay-script-loader';
 import AmazonPayWallet, { AmazonPayWalletOptions } from './amazon-pay-wallet';
 import AmazonPayWindow from './amazon-pay-window';
+import * as paymentStatusTypes from "../../payment-status-types";
 
 export default class AmazonPayPaymentStrategy implements PaymentStrategy {
     private _paymentMethod?: PaymentMethod;
@@ -128,6 +129,13 @@ export default class AmazonPayPaymentStrategy implements PaymentStrategy {
     }
 
     finalize(options?: PaymentRequestOptions): Promise<InternalCheckoutSelectors> {
+        const state = this._store.getState();
+        const order = state.order.getOrder();
+
+        if (order && state.payment.getPaymentStatus() === paymentStatusTypes.FINALIZE) {
+            return this._store.dispatch(this._orderActionCreator.finalizeOrder(order.orderId, options));
+        }
+
         return Promise.reject(new OrderFinalizationNotRequiredError());
     }
 
