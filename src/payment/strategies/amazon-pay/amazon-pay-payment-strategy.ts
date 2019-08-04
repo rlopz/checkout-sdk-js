@@ -35,6 +35,7 @@ export default class AmazonPayPaymentStrategy implements PaymentStrategy {
     private _paymentMethod?: PaymentMethod;
     private _walletOptions?: AmazonPayPaymentInitializeOptions;
     private _window: AmazonPayWindow;
+    private _isPaymentMethodSelected: boolean;
 
     constructor(
         private _store: CheckoutStore,
@@ -44,6 +45,7 @@ export default class AmazonPayPaymentStrategy implements PaymentStrategy {
         private _scriptLoader: AmazonPayScriptLoader
     ) {
         this._window = window;
+        this._isPaymentMethodSelected = false;
     }
 
     initialize(options: PaymentInitializeOptions): Promise<InternalCheckoutSelectors> {
@@ -86,11 +88,15 @@ export default class AmazonPayPaymentStrategy implements PaymentStrategy {
         const sellerId = this._getMerchantId();
 
         if (!referenceId || !sellerId) {
-            throw new NotInitializedError(NotInitializedErrorType.PaymentNotInitialized);
+            return Promise.reject(new NotInitializedError(NotInitializedErrorType.PaymentNotInitialized));
         }
 
         if (!payload.payment) {
-            throw new InvalidArgumentError('Unable to proceed because "payload.payment.methodId" argument is not provided.');
+            return Promise.reject(new InvalidArgumentError('Unable to proceed because "payload.payment.methodId" argument is not provided.'));
+        }
+
+        if (!this._isPaymentMethodSelected) {
+            return Promise.reject(new MissingDataError(MissingDataErrorType.MissingPaymentMethod));
         }
 
         const { payment: { paymentData, ...paymentPayload }, useStoreCredit = false } = payload;
@@ -139,10 +145,14 @@ export default class AmazonPayPaymentStrategy implements PaymentStrategy {
         return amazon ? amazon.referenceId : undefined;
     }
 
+    private _getOrderReferenceIdFromInitializationData(): string | undefined {
+        return this._paymentMethod ? this._paymentMethod.initializationData.orderReferenceId : undefined;
+    }
+
     private _createWallet(options: AmazonPayPaymentInitializeOptions): Promise<AmazonPayWallet> {
         return new Promise((resolve, reject) => {
             const { container, onError = noop, onPaymentSelect = noop, onReady = noop } = options;
-            const referenceId = this._getOrderReferenceId();
+            const referenceId = this._getOrderReferenceId() || this._getOrderReferenceIdFromInitializationData();
             const merchantId = this._getMerchantId();
 
             if (!document.getElementById(container)) {
@@ -168,7 +178,10 @@ export default class AmazonPayPaymentStrategy implements PaymentStrategy {
                 },
                 onPaymentSelect: orderReference => {
                     this._synchronizeBillingAddress()
-                        .then(() => onPaymentSelect(orderReference))
+                        .then(() => {
+                            this._isPaymentMethodSelected = true;
+                            onPaymentSelect(orderReference);
+                        })
                         .catch(onError);
                 },
                 onReady: orderReference => {
@@ -177,7 +190,7 @@ export default class AmazonPayPaymentStrategy implements PaymentStrategy {
                 },
             };
 
-            if (!walletOptions.amazonOrderReferenceId) {
+            if (!this._getOrderReferenceId()) {
                 walletOptions.onReady = orderReference => {
                     this._updateOrderReference(orderReference)
                         .then(() => {

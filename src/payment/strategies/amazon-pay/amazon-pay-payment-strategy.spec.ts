@@ -490,26 +490,10 @@ describe('AmazonPayPaymentStrategy', () => {
     });
 
     describe('#execute', () => {
+        const amazon3ds = getAmazonPay();
+        const payload = getOrderRequestBody();
         const paymentMethodsState = {
-            data: [{
-                id: 'amazon',
-                logoUrl: '',
-                method: 'widget',
-                supportedCards: [],
-                config: {
-                    displayName: 'AmazonPay',
-                    is3dsEnabled: true,
-                    merchantId: '0c173620-beb6-4421-99ef-03dc71a60685',
-                    testMode: false,
-                },
-                type: 'PAYMENT_TYPE_API',
-                initializationData: {
-                    clientId: '087eccf4-7f68-4384-b0a9-5f2fd6b0d344',
-                    region: 'US',
-                    redirectUrl: '/remote-checkout/amazon/redirect',
-                    tokenPrefix: 'ABCD|',
-                },
-            }],
+            data: [amazon3ds],
             meta: {
                 geoCountryCode: 'AU',
                 deviceSessionId: 'a37230e9a8e4ea2d7765e2f3e19f7b1d',
@@ -518,11 +502,11 @@ describe('AmazonPayPaymentStrategy', () => {
             errors: {},
             statuses: {},
         };
-        const payload = getOrderRequestBody();
         let options: PaymentInitializeOptions;
         let store3ds: CheckoutStore;
         let strategy3ds: AmazonPayPaymentStrategy;
         let amazonConfirmationFlow: AmazonPayConfirmationFlow;
+        amazon3ds.config.is3dsEnabled = true;
 
         beforeEach(async () => {
             options = { methodId: paymentMethod.id };
@@ -543,13 +527,35 @@ describe('AmazonPayPaymentStrategy', () => {
                 error: jest.fn(),
             };
 
-            jest.spyOn(store3ds, 'dispatch').mockReturnValue(Promise.resolve());
-            jest.spyOn(store3ds.getState().remoteCheckout, 'getCheckout')
-                    .mockReturnValue({ referenceId: 'referenceId' });
             await strategy3ds.initialize({ methodId: paymentMethod.id, amazon: { container: 'wallet' } });
         });
 
         it('redirects to confirmation flow success when 3ds is enabled and supported', async () => {
+            const remoteCheckout = {
+                referenceId: 'referenceId',
+                shipping: {},
+            };
+
+            jest.spyOn(store3ds, 'getState');
+
+            jest.spyOn(store3ds.getState().remoteCheckout, 'getCheckout')
+                .mockReturnValue(remoteCheckout);
+
+            if (hostWindow.OffAmazonPayments) {
+                hostWindow.OffAmazonPayments.initConfirmationFlow = jest.fn((_sellerId, _referenceId, callback) => {
+                    callback(amazonConfirmationFlow);
+                });
+
+                strategy3ds.execute(payload, options);
+
+                await new Promise(resolve => process.nextTick(resolve));
+
+                expect(hostWindow.OffAmazonPayments.initConfirmationFlow).toHaveBeenCalled();
+            }
+
+        });
+
+        it('redirects to confirmation flow success when support 3ds and extract OrderReferenceId from InitializationData', async () => {
             if (hostWindow.OffAmazonPayments) {
                 hostWindow.OffAmazonPayments.initConfirmationFlow = jest.fn((_sellerId, _referenceId, callback) => {
                     callback(amazonConfirmationFlow);
