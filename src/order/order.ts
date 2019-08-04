@@ -29,6 +29,7 @@ export default interface Order {
     taxTotal: number;
     payments?: OrderPayments;
     status: string;
+    providerTransactionId: string;
 }
 
 export type OrderPayments = Array<GatewayOrderPayment | GiftCertificateOrderPayment>;

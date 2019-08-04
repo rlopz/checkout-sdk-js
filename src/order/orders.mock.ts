@@ -25,6 +25,7 @@ export function getOrder(): Order {
         hasDigitalItems: false,
         isComplete: true,
         status: 'ORDER_STATUS_AWAITING_FULFILLMENT',
+        providerTransactionId: 'providerTransactionId',
         isDownloadable: false,
         isTaxIncluded: false,
         lineItems: {
