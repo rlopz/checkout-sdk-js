@@ -24,7 +24,6 @@ export default interface Order {
     orderAmountAsInteger: number;
     orderId: number;
     payments?: OrderPayments;
-    providerTransactionId: string;
     shippingCostTotal: number;
     shippingCostBeforeDiscount: number;
     status: string;

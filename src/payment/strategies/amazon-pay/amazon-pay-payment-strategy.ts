@@ -138,17 +138,15 @@ export default class AmazonPayPaymentStrategy implements PaymentStrategy {
         return amazon ? amazon.referenceId : undefined;
     }
 
-    private _getOrderReferenceIdFromOrder(): string | undefined {
-        const state = this._store.getState();
-        const order = state.order.getOrder();
+    private _getOrderReferenceIdFromInitializationData(): string | undefined {
 
-        return order ? order.providerTransactionId : undefined;
+        return this._paymentMethod ? this._paymentMethod.initializationData.orderReferenceId : undefined;
     }
 
     private _createWallet(options: AmazonPayPaymentInitializeOptions): Promise<AmazonPayWallet> {
         return new Promise((resolve, reject) => {
             const { container, onError = noop, onPaymentSelect = noop, onReady = noop } = options;
-            const referenceId = this._getOrderReferenceId() || this._getOrderReferenceIdFromOrder();
+            const referenceId = this._getOrderReferenceId() || this._getOrderReferenceIdFromInitializationData();
             const merchantId = this._getMerchantId();
 
             if (!document.getElementById(container)) {

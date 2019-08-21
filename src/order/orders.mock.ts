@@ -44,7 +44,6 @@ export function getOrder(): Order {
             getGatewayOrderPayment(),
             getGiftCertificateOrderPayment(),
         ],
-        providerTransactionId: 'providerTransactionId',
         shippingCostTotal: 15,
         shippingCostBeforeDiscount: 20,
         status: 'ORDER_STATUS_AWAITING_FULFILLMENT',
