@@ -29,6 +29,7 @@ import AmazonPayPaymentInitializeOptions from './amazon-pay-payment-initialize-o
 import AmazonPayScriptLoader from './amazon-pay-script-loader';
 import AmazonPayWallet, { AmazonPayWalletOptions } from './amazon-pay-wallet';
 import AmazonPayWindow from './amazon-pay-window';
+import PaymentMethodNotAllowedError from "../../errors/payment-method-not-allowed-error";
 
 export default class AmazonPayPaymentStrategy implements PaymentStrategy {
     private _paymentMethod?: PaymentMethod;
@@ -225,6 +226,9 @@ export default class AmazonPayPaymentStrategy implements PaymentStrategy {
                 const billingAddress = state.billingAddress.getBillingAddress();
                 const internalBillingAddress = billingAddress && mapToInternalAddress(billingAddress);
 
+                if (amazon && amazon.billing && !amazon.billing.address) {
+                    throw new PaymentMethodNotAllowedError();
+                }
                 if (remoteAddress === false) {
                     throw new RemoteCheckoutSynchronizationError();
                 }
