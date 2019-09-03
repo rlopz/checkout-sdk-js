@@ -19,6 +19,7 @@ import { OrderActionCreator, OrderRequestBody } from '../../../order';
 import { OrderFinalizationNotRequiredError } from '../../../order/errors';
 import { RemoteCheckoutActionCreator } from '../../../remote-checkout';
 import { RemoteCheckoutSynchronizationError } from '../../../remote-checkout/errors';
+import PaymentMethodNotAllowedError from '../../errors/payment-method-not-allowed-error';
 import PaymentMethod from '../../payment-method';
 import { PaymentInitializeOptions, PaymentRequestOptions } from '../../payment-request-options';
 import PaymentStrategy from '../payment-strategy';
@@ -29,7 +30,6 @@ import AmazonPayPaymentInitializeOptions from './amazon-pay-payment-initialize-o
 import AmazonPayScriptLoader from './amazon-pay-script-loader';
 import AmazonPayWallet, { AmazonPayWalletOptions } from './amazon-pay-wallet';
 import AmazonPayWindow from './amazon-pay-window';
-import PaymentMethodNotAllowedError from "../../errors/payment-method-not-allowed-error";
 
 export default class AmazonPayPaymentStrategy implements PaymentStrategy {
     private _paymentMethod?: PaymentMethod;
