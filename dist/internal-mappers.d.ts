@@ -535,6 +535,7 @@ declare interface Order {
     customerId: number;
     customerMessage: string;
     discountAmount: number;
+    handlingCostTotal: number;
     hasDigitalItems: boolean;
     isComplete: boolean;
     isDownloadable: boolean;
@@ -543,13 +544,12 @@ declare interface Order {
     orderAmount: number;
     orderAmountAsInteger: number;
     orderId: number;
+    payments?: OrderPayments;
     shippingCostTotal: number;
     shippingCostBeforeDiscount: number;
-    handlingCostTotal: number;
+    status: string;
     taxes: Tax[];
     taxTotal: number;
-    payments?: OrderPayments;
-    status: string;
 }
 
 declare interface OrderMetaState extends InternalOrderMeta {
