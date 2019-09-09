@@ -543,7 +543,7 @@ describe('AmazonPayPaymentStrategy', () => {
                 .mockReturnValue(remoteCheckout);
 
             if (hostWindow.OffAmazonPayments) {
-                hostWindow.OffAmazonPayments.initConfirmationFlow = jest.fn((sellerId, referenceId, callback) => {
+                hostWindow.OffAmazonPayments.initConfirmationFlow = jest.fn((_sellerId, _referenceId, callback) => {
                     callback(amazonConfirmationFlow);
                 });
 
