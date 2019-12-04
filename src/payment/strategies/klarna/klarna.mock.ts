@@ -1,3 +1,4 @@
+import { Address } from '../../../address';
 import { BillingAddress } from '../../../billing/';
 
 import { KlarnaUpdateSessionParams } from './klarna-credit';
@@ -45,6 +46,24 @@ export function getEUBillingAddress(): BillingAddress {
         postalCode: '95555',
         phone: '555-555-5555',
         customFields: [],
+    };
+}
+
+export function getEUShippingAddress(): Address {
+    return {
+        address1: '12345 Testing Way',
+        address2: '',
+        city: 'Some City',
+        company: '',
+        country: '',
+        countryCode: 'US',
+        customFields: [],
+        firstName: 'Test',
+        lastName: 'Tester',
+        postalCode: '95555',
+        phone: '555-555-5555',
+        stateOrProvince: 'California',
+        stateOrProvinceCode: '',
     };
 }
 
