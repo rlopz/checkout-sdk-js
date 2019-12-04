@@ -11,7 +11,7 @@ describe('KlarnaScriptLoader', () => {
     });
 
     it('loads widget script', () => {
-        klarnaScriptLoader.load();
+        klarnaScriptLoader.loadCredit();
 
         expect(scriptLoader.loadScript).toHaveBeenCalledWith(
             '//credit.klarnacdn.net/lib/v1/api.js'

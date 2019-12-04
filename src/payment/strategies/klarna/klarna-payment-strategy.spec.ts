@@ -6,7 +6,7 @@ import { of, Observable } from 'rxjs';
 
 import { createCheckoutStore, CheckoutRequestSender, CheckoutStore, CheckoutValidator } from '../../../checkout';
 import { getCheckoutStoreState } from '../../../checkout/checkouts.mock';
-import { MissingDataError } from '../../../common/error/errors';
+import { InvalidArgumentError } from '../../../common/error/errors';
 import { OrderActionCreator, OrderActionType, OrderRequestBody, OrderRequestSender } from '../../../order';
 import { OrderFinalizationNotRequiredError } from '../../../order/errors';
 import { getOrderRequestBody } from '../../../order/internal-orders.mock';
@@ -21,12 +21,14 @@ import { getKlarna } from '../../payment-methods.mock';
 
 import KlarnaCredit from './klarna-credit';
 import KlarnaPaymentStrategy from './klarna-payment-strategy';
+import KlarnaPayments from './klarna-payments';
 import KlarnaScriptLoader from './klarna-script-loader';
-import { getEUBillingAddress, getEUBillingAddressWithNoPhone, getKlarnaUpdateSessionParams, getKlarnaUpdateSessionParamsPhone } from './klarna.mock';
+import { getEUBillingAddress, getEUBillingAddressWithNoPhone, getEUShippingAddress, getKlarnaUpdateSessionParams, getKlarnaUpdateSessionParamsPhone } from './klarna.mock';
 
 describe('KlarnaPaymentStrategy', () => {
     let initializePaymentAction: Observable<Action>;
     let klarnaCredit: KlarnaCredit;
+    let klarnaPayments: KlarnaPayments;
     let loadPaymentMethodAction: Observable<Action>;
     let payload: OrderRequestBody;
     let paymentMethod: PaymentMethod;
@@ -45,6 +47,8 @@ describe('KlarnaPaymentStrategy', () => {
 
         jest.spyOn(store, 'dispatch').mockReturnValue(Promise.resolve(store.getState()));
         jest.spyOn(store.getState().paymentMethods, 'getPaymentMethod').mockReturnValue(paymentMethodMock);
+        jest.spyOn(store.getState().billingAddress, 'getBillingAddress').mockReturnValue(getEUBillingAddress());
+        jest.spyOn(store.getState().shippingAddress, 'getShippingAddress').mockReturnValue( getEUShippingAddress() );
 
         orderActionCreator = new OrderActionCreator(
             new OrderRequestSender(createRequestSender()),
@@ -66,6 +70,15 @@ describe('KlarnaPaymentStrategy', () => {
 
         klarnaCredit = {
             authorize: jest.fn((_, callback) => callback({ approved: true, authorization_token: 'bar' })),
+            init: jest.fn(() => {}),
+            load: jest.fn((_, callback) => callback({ show_form: true })),
+        };
+
+        klarnaPayments = {
+            authorize: jest.fn((params, data, callback) => {
+                params && data ? callback({ approved: true, authorization_token: 'bar' }) :
+                    callback({ approved: true, authorization_token: 'bar' });
+            }),
             init: jest.fn(() => {}),
             load: jest.fn((_, callback) => callback({ show_form: true })),
         };
@@ -94,8 +107,11 @@ describe('KlarnaPaymentStrategy', () => {
         jest.spyOn(remoteCheckoutActionCreator, 'initializePayment')
             .mockReturnValue(initializePaymentAction);
 
-        jest.spyOn(scriptLoader, 'load')
+        jest.spyOn(scriptLoader, 'loadCredit')
             .mockImplementation(() => Promise.resolve(klarnaCredit));
+
+        jest.spyOn(scriptLoader, 'loadPayments')
+            .mockImplementation(() => Promise.resolve(klarnaPayments));
 
         jest.spyOn(store, 'subscribe');
     });
@@ -108,7 +124,7 @@ describe('KlarnaPaymentStrategy', () => {
         });
 
         it('loads script when initializing strategy', () => {
-            expect(scriptLoader.load).toHaveBeenCalledTimes(1);
+            expect(scriptLoader.loadCredit).toHaveBeenCalledTimes(1);
         });
 
         it('loads payment data from API', () => {
@@ -137,9 +153,9 @@ describe('KlarnaPaymentStrategy', () => {
             await strategy.initialize({ methodId: paymentMethod.id, klarna: { container: '#container' } });
         });
 
-        it('authorizes against klarna', () => {
-            strategy.execute(payload);
-            expect(klarnaCredit.authorize).toHaveBeenCalledWith({}, expect.any(Function));
+        it('authorizes against klarna', async () => {
+            await strategy.execute(payload);
+            expect(klarnaCredit.authorize).toHaveBeenCalledWith(getKlarnaUpdateSessionParamsPhone(), expect.any(Function));
         });
 
         it('loads widget in EU', async () => {
@@ -158,7 +174,7 @@ describe('KlarnaPaymentStrategy', () => {
             jest.spyOn(store.getState().paymentMethods, 'getPaymentMethod').mockReturnValue(paymentMethodMock);
 
             await strategy.initialize({ methodId: paymentMethod.id, klarna: { container: '#container' } });
-            strategy.execute(payload);
+            await strategy.execute(payload);
 
             expect(klarnaCredit.authorize)
                 .toHaveBeenCalledWith(getKlarnaUpdateSessionParamsPhone(), expect.any(Function));
@@ -181,31 +197,19 @@ describe('KlarnaPaymentStrategy', () => {
 
             await strategy.initialize({ methodId: paymentMethod.id, klarna: { container: '#container' } });
 
-            strategy.execute(payload);
+            await strategy.execute(payload);
 
             expect(klarnaCredit.authorize)
                 .toHaveBeenCalledWith(getKlarnaUpdateSessionParams(), expect.any(Function));
         });
 
-        it('throws error if required data is not loaded', async () => {
-            store = store = createCheckoutStore({
-                ...getCheckoutStoreState(),
-                billingAddress: undefined,
-            });
-            strategy = new KlarnaPaymentStrategy(
-                store,
-                orderActionCreator,
-                paymentMethodActionCreator,
-                remoteCheckoutActionCreator,
-                scriptLoader
-            );
-
-            strategy.initialize({ methodId: paymentMethod.id, klarna: { container: '#container' } });
+        it('throws InvalidArgumentError when payload.payment is not provided', async () => {
+            await strategy.initialize({ methodId: paymentMethod.id, klarna: { container: '#container' } });
 
             try {
-                await strategy.execute(payload);
+                await strategy.execute({});
             } catch (error) {
-                expect(error).toBeInstanceOf(MissingDataError);
+                expect(error).toBeInstanceOf(InvalidArgumentError);
             }
         });
 
