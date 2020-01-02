@@ -10,7 +10,7 @@ import PaymentMethodState, { DEFAULT_STATE } from './payment-method-state';
 export default interface PaymentMethodSelector {
     getPaymentMethods(): PaymentMethod[] | undefined;
     getPaymentMethodsMeta(): PaymentMethodMeta | undefined;
-    getPaymentMethod(methodId: string, gatewayId?: string): PaymentMethod | undefined;
+    getPaymentMethod(methodId: string, gatewayId?: string, methodType?: string): PaymentMethod | undefined;
     getLoadError(): Error | undefined;
     getLoadMethodError(methodId?: string): Error | undefined;
     isLoading(): boolean;
@@ -32,10 +32,12 @@ export function createPaymentMethodSelectorFactory(): PaymentMethodSelectorFacto
 
     const getPaymentMethod = createSelector(
         (state: PaymentMethodState) => state.data,
-        paymentMethods => (methodId: string, gatewayId?: string) => {
-            return gatewayId ?
-                find(paymentMethods, { id: methodId, gateway: gatewayId }) :
-                find(paymentMethods, { id: methodId });
+        paymentMethods => (methodId: string, gatewayId?: string, methodType?: string) => {
+
+            return methodType ? find(paymentMethods, {id: methodId, method: methodType}) :
+                gatewayId ?
+                    find(paymentMethods, {id: methodId, gateway: gatewayId}) :
+                    find(paymentMethods, {id: methodId});
         }
     );
 

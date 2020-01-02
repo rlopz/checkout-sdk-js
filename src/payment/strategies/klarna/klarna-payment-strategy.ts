@@ -146,14 +146,14 @@ export default class KlarnaPaymentStrategy implements PaymentStrategy {
 
     private _loadPaymentsWidget(options: PaymentInitializeOptions): Promise<KlarnaLoadResponse> {
         if (!options.klarnav2) {
-            throw new InvalidArgumentError('Unable to load widget because "options.klarna" argument is not provided.');
+            throw new InvalidArgumentError('Unable to load widget because "options.klarnav2" argument is not provided.');
         }
 
         const { methodId, klarnav2: { container, payment_method_category, onLoad } } = options;
         const state = this._store.getState();
 
         return new Promise<KlarnaLoadResponse>(resolve => {
-            const paymentMethod = state.paymentMethods.getPaymentMethod(methodId);
+            const paymentMethod = state.paymentMethods.getPaymentMethod(methodId, undefined, payment_method_category);
 
             if (!paymentMethod) {
                 throw new MissingDataError(MissingDataErrorType.MissingPaymentMethod);
