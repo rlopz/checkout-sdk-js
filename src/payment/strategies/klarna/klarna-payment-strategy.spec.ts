@@ -30,6 +30,7 @@ describe('KlarnaPaymentStrategy', () => {
     let klarnaPayments: KlarnaPayments;
     let loadPaymentMethodAction: Observable<Action>;
     let payload: OrderRequestBody;
+    let klarnaV2Payload: OrderRequestBody;
     let paymentMethod: PaymentMethod;
     let orderActionCreator: OrderActionCreator;
     let paymentMethodActionCreator: PaymentMethodActionCreator;
@@ -90,6 +91,13 @@ describe('KlarnaPaymentStrategy', () => {
             },
         });
 
+        klarnaV2Payload = merge({}, getOrderRequestBody(), {
+            payment: {
+                methodId: 'pay_later',
+                gatewayId: paymentMethod.gateway,
+            },
+        });
+
         loadPaymentMethodAction = of(createAction(PaymentMethodActionType.LoadPaymentMethodSucceeded, paymentMethod, { methodId: paymentMethod.id }));
         initializePaymentAction = of(createAction(RemoteCheckoutActionType.InitializeRemotePaymentRequested));
         submitOrderAction = of(createAction(OrderActionType.SubmitOrderRequested));
@@ -143,6 +151,85 @@ describe('KlarnaPaymentStrategy', () => {
 
         it('triggers callback with response', () => {
             expect(onLoad).toHaveBeenCalledWith({ show_form: true });
+        });
+    });
+
+    describe('KlarnaV2 #initialize()', () => {
+        const onLoad = jest.fn();
+
+        beforeEach(async () => {
+            await strategy.initialize({ methodId: 'pay_later', klarnav2: { container: '#container', payment_method_category: 'pay_later', onLoad } });
+        });
+
+        it('loads payments script when initializing strategy', () => {
+            expect(scriptLoader.loadPayments).toHaveBeenCalledTimes(1);
+        });
+
+        it('loads store subscribe once', () => {
+            expect(store.subscribe).toHaveBeenCalledTimes(1);
+        });
+
+        it('loads payments widget', () => {
+            expect(klarnaPayments.init).toHaveBeenCalledWith({ client_token: 'foo' });
+            expect(klarnaPayments.load)
+                .toHaveBeenCalledWith({ container: '#container', payment_method_category: 'pay_later' }, expect.any(Function));
+            expect(klarnaPayments.load).toHaveBeenCalledTimes(1);
+        });
+
+        it('triggers callback with response', () => {
+            expect(onLoad).toHaveBeenCalledWith({ show_form: true });
+        });
+    });
+
+    describe('Klarna V2 #execute()', () => {
+        const category = 'pay_later';
+        beforeEach(async () => {
+            await strategy.initialize({ methodId: category, klarnav2: { container: '#container', payment_method_category: category } });
+        });
+
+        it('authorizes against klarna v2', async () => {
+            await strategy.execute(klarnaV2Payload);
+            expect(klarnaPayments.authorize).toHaveBeenCalledWith({ payment_method_category: category }, getKlarnaUpdateSessionParamsPhone(), expect.any(Function));
+        });
+
+        describe('when klarna v2 authorization is not approved', () => {
+            beforeEach(() => {
+                klarnaPayments.authorize = jest.fn(
+                    ({}, {}, callback) => callback({ approved: false, show_form: true })
+                );
+            });
+
+            it('rejects the payment execution with cancelled payment error', async () => {
+                const rejectedSpy = jest.fn();
+                await strategy.execute(klarnaV2Payload).catch(rejectedSpy);
+
+                expect(rejectedSpy)
+                    .toHaveBeenCalledWith(new PaymentMethodCancelledError());
+
+                expect(orderActionCreator.submitOrder).not.toHaveBeenCalled();
+                expect(remoteCheckoutActionCreator.initializePayment)
+                    .not.toHaveBeenCalled();
+            });
+        });
+
+        describe('when klarna v2 authorization fails', () => {
+            beforeEach(() => {
+                klarnaPayments.authorize = jest.fn(
+                    ({}, {}, callback) => callback({ approved: false })
+                );
+            });
+
+            it('rejects the payment execution with invalid payment error', async () => {
+                const rejectedSpy = jest.fn();
+                await strategy.execute(klarnaV2Payload).catch(rejectedSpy);
+
+                expect(rejectedSpy)
+                    .toHaveBeenCalledWith(new PaymentMethodInvalidError());
+
+                expect(orderActionCreator.submitOrder).not.toHaveBeenCalled();
+                expect(remoteCheckoutActionCreator.initializePayment)
+                    .not.toHaveBeenCalled();
+            });
         });
     });
 

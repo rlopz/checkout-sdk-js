@@ -218,7 +218,6 @@ export default class KlarnaPaymentStrategy implements PaymentStrategy {
 
     private _authorize(category: string): Promise<any> {
         return new Promise((resolve, reject) => {
-            this._updateOrder();
 
             return new Promise<InternalCheckoutSelectors>(() => {
                     const billingAddress = this._store.getState().billingAddress.getBillingAddress();
@@ -231,11 +230,13 @@ export default class KlarnaPaymentStrategy implements PaymentStrategy {
                     const updateSessionData = this._getUpdateSessionData(billingAddress, shippingAddress);
 
                     if (category !== 'klarna') {
+                        this._updateOrder();
+
                         if (!this._klarnaPayments) {
                             throw new NotInitializedError(NotInitializedErrorType.PaymentNotInitialized);
                         }
 
-                        this._klarnaPayments.authorize({payment_method_category: category}, updateSessionData, res => {
+                        this._klarnaPayments.authorize({ payment_method_category: category }, updateSessionData, res => {
                             if (res.approved) {
                                 return resolve(res);
                             }
