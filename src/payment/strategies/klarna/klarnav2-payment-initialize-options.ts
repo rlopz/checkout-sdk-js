@@ -1,10 +1,10 @@
 import { KlarnaLoadResponse } from './klarna-payments';
 
 /**
- * A set of options that are required to initialize the Klarna payment method.
+ * A set of options that are required to initialize the KlarnaV2 payment method.
  *
- * When Klarna is initialized, a widget will be inserted into the DOM. The
- * widget has a list of payment options for the customer to choose from.
+ * When KlarnaV2 is initialized, a list of payment options will be displayed for the customer to choose from.
+ * Each one with its own widget.
  */
 export default interface KlarnaV2PaymentInitializeOptions {
     /**
